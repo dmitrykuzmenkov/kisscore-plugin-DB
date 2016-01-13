@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+declare -a checks=(
+  'mysql --version'
+  'php -m | grep mysqli$'
+)
+run-checks "${checks[@]}"
