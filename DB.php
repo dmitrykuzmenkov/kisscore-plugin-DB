@@ -3,6 +3,21 @@ namespace Plugin\DB;
 class DB {
   protected static $pool;
   protected static $shards;
+
+  // TODO: think about shards logic
+  // Return false in callbable to revert transaction
+  public static function transaction(Callable $func) {
+    static::query('START TRANSACTION');
+    $result = $func();
+    if ($result === false) {
+      static::query('ROLLBACK');
+    } else {
+      static::query('COMMIT');
+    }
+
+    return $result;
+  }
+
   /**
    * Выполнение запроса к базе данных, выполняет коннект на запросе
    *
@@ -18,6 +33,7 @@ class DB {
     assert("\$shard_id >= 0 && \$shard_id < 4096 /* only 4096 shards allowed */");
 
     static $time = 0;
+    $query = trim($query);
 
     if (!static::$shards) {
       static::$shards = config('mysql.shard');
@@ -62,7 +78,7 @@ class DB {
     );
     $Result = $DB->query(strtr($query, $params));
     // Определяем результат работы функции в зависимости от типа запроса к базе
-    switch (strtolower(strtok($query, ' '))) {
+    switch (trim(strtolower(strtok($query, ' ')))) {
       case 'insert':
         return $DB->insert_id ?: $DB->affected_rows;
         break;
@@ -78,7 +94,10 @@ class DB {
         $Result->close();
         return $result;
         break;
-
+      case 'start':
+      case 'commit':
+      case 'rollback':
+        break;
       default:
         trigger_error('Undefined call for database query');
     }
