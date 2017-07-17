@@ -1,5 +1,7 @@
 <?php
 namespace Plugin\DB;
+use Exception;
+use App;
 class DB {
   protected static $pool;
   protected static $shards;
@@ -8,14 +10,20 @@ class DB {
   // Return false in callbable to revert transaction
   public static function transaction(Callable $func) {
     static::query('START TRANSACTION');
-    $result = $func();
-    if ($result === false) {
+    $result = false;
+    try {
+      $result = $func();
+      if ($result === false) {
+        static::query('ROLLBACK');
+      } else {
+        static::query('COMMIT');
+      }
+    } catch (Exception $e) {
+      App::log('Error while transaction: ' . $e->getMessage(), $e->getTrace());
       static::query('ROLLBACK');
-    } else {
-      static::query('COMMIT');
+    } finally {
+      return $result;
     }
-
-    return $result;
   }
 
   /**
@@ -97,6 +105,7 @@ class DB {
       case 'start':
       case 'commit':
       case 'rollback':
+      case 'set':
         break;
       default:
         trigger_error('Undefined call for database query');
