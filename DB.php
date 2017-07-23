@@ -79,11 +79,12 @@ class DB {
       array_map(function ($k) { return ':' . $k; }, array_keys($params)),
       array_map(
         function ($item) use ($DB) {
-          return filter_var($item, FILTER_VALIDATE_INT | FILTER_VALIDATE_FLOAT | FILTER_VALIDATE_BOOLEAN) ? $item : '"' . $DB->real_escape_string($item) . '"';
+          return $item === false || false !== filter_var($item, FILTER_VALIDATE_INT | FILTER_VALIDATE_FLOAT | FILTER_VALIDATE_BOOLEAN) ? $item : '"' . $DB->real_escape_string($item) . '"';
         },
         $params
       )
     );
+
     $Result = $DB->query(strtr($query, $params));
     // Определяем результат работы функции в зависимости от типа запроса к базе
     switch (trim(strtolower(strtok($query, ' ')))) {
