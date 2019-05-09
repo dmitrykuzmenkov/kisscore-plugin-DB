@@ -79,7 +79,19 @@ class DB {
       array_map(function ($k) { return ':' . $k; }, array_keys($params)),
       array_map(
         function ($item) use ($DB) {
-          return $item === false || false !== filter_var($item, FILTER_VALIDATE_INT | FILTER_VALIDATE_FLOAT | FILTER_VALIDATE_BOOLEAN) ? $item : '"' . $DB->real_escape_string($item) . '"';
+          if ($item === true) {
+            return 'TRUE';
+          }
+
+          if ($item === false) {
+            return 'FALSE';
+          }
+
+          if ($item === null) {
+            return 'NULL';
+          }
+
+          return false !== filter_var($item, FILTER_VALIDATE_INT | FILTER_VALIDATE_FLOAT) ? $item : '"' . $DB->real_escape_string($item) . '"';
         },
         $params
       )
